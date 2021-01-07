@@ -8,7 +8,7 @@ const
   nc = require('./routes/nc'),
   mungbean = require('./routes/mungbean'),
 
-  cronJobs = require('./utils/cron-jobs'),
+  cronJobs = require('./core/cron-jobs'),
 
   app = express();
 

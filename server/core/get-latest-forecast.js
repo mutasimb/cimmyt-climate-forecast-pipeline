@@ -7,16 +7,16 @@ const
 
   { ncPath, pathDownload } = require('../config/keys'),
 
-  statsBMDDownloadable = require('./hpc-file-stats'),
-  checkBMDDownloadable = require('./hpc-file-existence'),
-  downloadBMDDownloadable = require('./hpc-file-download'),
-  processNc = require('./process-downloaded-nc'),
+  statsBMDDownloadable = require('../utils/hpc-file-stats.js'),
+  checkBMDDownloadable = require('../utils/hpc-file-existence'),
+  downloadBMDDownloadable = require('../utils/hpc-file-download'),
+  processNc = require('../utils/process-downloaded-nc'),
 
-  pushToGCP = require('./push-to-gcp'),
-  pushToWB = require('./wheat-blast-push'),
-  submitToEKrishok = require('./e-krishok-submission'),
+  pushToGCP = require('../utils/push-to-gcp'),
+  pushToWB = require('../utils/wheat-blast-push'),
+  submitToEKrishok = require('../utils/e-krishok-submission'),
 
-  log = require('./dev-log');
+  log = require('../utils/dev-log');
 
 module.exports = async () => {
   const
