@@ -52,6 +52,10 @@ module.exports = () => new Promise((resolve, reject) => {
         }
       });
     })
+    .on('error', err => {
+      log(`An error occurred: ${err}`, "BMDEXISTENCE CATCH", false);
+      reject({ log: false, msg: err });
+    })
     .connect({
       port: 22,
       host: hostBMD,
