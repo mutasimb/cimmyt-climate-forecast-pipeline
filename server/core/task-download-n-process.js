@@ -2,40 +2,50 @@ const
   fs = require('fs'),
   { promisify } = require('util'),
   { timeFormat } = require('d3-time-format'),
+  writeFile = promisify(fs.writeFile),
+  readFile = promisify(fs.readFile),
   exists = promisify(fs.exists),
   stat = promisify(fs.stat),
 
-  { ncPath, pathDownload } = require('../config/keys'),
+  { pathDateLog, pathDownload } = require('../config/keys'),
 
   statsBMDDownloadable = require('../utils/hpc-file-stats.js'),
   checkBMDDownloadable = require('../utils/hpc-file-existence'),
   downloadBMDDownloadable = require('../utils/hpc-file-download'),
-  processNc = require('../utils/process-downloaded-nc'),
 
-  pushToGCP = require('../utils/push-to-gcp'),
-  pushToWB = require('../utils/wheat-blast-push'),
-  submitToEKrishok = require('../utils/e-krishok-submission'),
+  bmdToGCP = require('./forecast-to-GCP'),
+  bmdToWB = require('./forecast-to-wheat-blast'),
+  bmdToEKrishok = require('./forecast-to-ekrishok'),
+  bmdToIVR = require('./forecast-to-IVR'),
 
   log = require('../utils/dev-log');
 
 module.exports = async () => {
   const
     yyyymmddToday = timeFormat('%Y%m%d')(new Date()),
-    filenameProcessedNc = `bmd_forecast_${yyyymmddToday}_d01.nc`,
-    pathProcessedNc = `${ncPath}/${filenameProcessedNc}`,
-
     yyyymmddYesterday = timeFormat('%Y%m%d')(new Date(new Date().getTime() - 1000 * 3600 * 24)),
+
     filenameDownloadable = `${yyyymmddYesterday}18_d01.nc.subset`,
     pathDownloaded = `${pathDownload}/${filenameDownloadable}`;
 
   try {
     log("", false, true, false);
-    log("Initiating process ...", "ROOT");
+    log("Initiating process ...", "ROOT", true);
 
-    log("Checking existence of processed forecast output ...", "ROOT");
-    const isProcessedNcPresent = await exists(pathProcessedNc);
-    if (isProcessedNcPresent) throw { log: false, msg: `Processed forecast output file already exists: ${pathProcessedNc}` };
-    log(`Processed forecast output file doesn't exist: ${pathProcessedNc}`, "ROOT");
+    const
+      dateLogExists = await exists(pathDateLog);
+    let
+      dateLog = dateLogExists ? JSON.parse(await readFile(pathDateLog)) : { date: 0 };
+
+    if(!dateLogExists || dateLog.date !== +yyyymmddToday) await writeFile(pathDateLog, JSON.stringify({
+      date: +yyyymmddToday,
+      createdAt: new Date(),
+      agvisely: { done: false, updatedAt: null },
+      wheatBlast: { done: false, updatedAt: null },
+      eKrishok: { done: false, updatedAt: null },
+      ivr: { done: false, updatedAt: null }
+    }, undefined, 2));
+    dateLog = JSON.parse(await readFile(pathDateLog));
 
     log("Checking existence of downloadable forecast file ...", "ROOT");
     const isDownloadedFilePresent = await exists(pathDownloaded);
@@ -44,7 +54,9 @@ module.exports = async () => {
 
       log(`Getting stats of downloaded forecast file ...`, "ROOT");
       const stats = await stat(pathDownloaded);
-      if ((new Date() - new Date(stats.mtimeMs)) / (1000 * 60) < 5) throw { log: true, msg: `File was modified less than 5 minute ago: ${pathDownloaded}` };
+      if (
+        (new Date() - new Date(stats.mtimeMs)) / (1000 * 60) < 5
+      ) throw { log: true, msg: `File was modified less than 5 minute ago: ${pathDownloaded}` };
 
       const
         { size: sizeDownloadedFile } = stats,
@@ -62,12 +74,13 @@ module.exports = async () => {
       await downloadBMDDownloadable();
     }
 
-    const pathProcessedNcFile = await processNc(pathDownloaded);
-
-    pushToGCP(pathProcessedNcFile.output).catch(err => { log(err, "ROOT", false, error = true); });
-    pushToWB(pathProcessedNcFile.output).catch(err => { log(err, "ROOT", false, error = true); });
-    submitToEKrishok(pathProcessedNcFile.output).catch(err => { log(err, "ROOT", false, error = true); });
+    if(!dateLog.agvisely.done) bmdToGCP(pathDownloaded);
+    if(!dateLog.wheatBlast.done) bmdToWB(pathDownloaded);
+    if(!dateLog.eKrishok.done) bmdToEKrishok(pathDownloaded);
+    if(!dateLog.ivr.done) bmdToIVR(pathDownloaded);
   } catch (err) {
     if (err.log || process.env.NODE_ENV === "development") log('msg' in err ? err.msg : err, "ROOT CATCH", false, error = true);
+  } finally {
+    log("... finished", "ROOT", true);
   }
 };

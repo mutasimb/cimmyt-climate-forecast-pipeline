@@ -2,12 +2,34 @@ const
   express = require('express'),
   router = express.Router(),
 
-  forecastEKrishok = require('../utils/e-krishok-forecast');
+  { timeParse } = require("d3-time-format"),
+  fs = require('fs'),
+  { promisify } = require('util'),
+  readdir = promisify(fs.readdir),
+  readFile = promisify(fs.readFile),
 
-router.get('/', async (req, res) => {
+  { pathMungbean } = require('../config/keys');
+
+router.get('/ivr-provider/', async (req, res) => {
   try {
-    const forecast = await forecastEKrishok();
-    res.json(forecast);
+    const
+      mungbeanFiles = await readdir(pathMungbean),
+      mungbeanDirectives = mungbeanFiles
+        .filter(el => el.startsWith("bmd_forecast_ivr_"))
+        .map(el => ({
+          filename: el,
+          path: pathMungbean + '/' + el,
+          date: timeParse("bmd_forecast_ivr_%Y%m%d_d01.json")(el)
+        }))
+        .sort((a, b) => a.date > b.date ? -1 : 1);
+    if(mungbeanDirectives.length === 0) {
+      res.status(503).json({
+        message: "No data available"
+      });
+    } else {
+      const dataJSON = JSON.parse(await readFile(mungbeanDirectives[0].path));
+      res.json(dataJSON);
+    }
   } catch (error) {
     console.log(error);
   }

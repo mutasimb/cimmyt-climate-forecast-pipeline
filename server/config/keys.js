@@ -1,10 +1,11 @@
 const {
+  DATELOGPATH,
   NCDIR,
+  DOWNLOADPATH,
   HPCHOST,
   HPCUSER,
   HPCPASS,
   HPCPATH,
-  DOWNLOADPATH,
   GCPHOST,
   GCPUSER,
   GCPKEY,
@@ -16,26 +17,29 @@ const {
   WBHOST,
   WBUSER,
   WBPASS,
-  WBPATH
+  WBPATH,
+  WBPATHLOCAL
 } = process.env;
 
 module.exports = {
+  pathDateLog: DATELOGPATH,
   ncPath: NCDIR,
+  pathDownload: DOWNLOADPATH,
   hostBMD: HPCHOST,
   userBMD: HPCUSER,
   passBMD: HPCPASS,
   pathBMDOutput: HPCPATH,
-  pathDownload: DOWNLOADPATH,
   hostGCP: GCPHOST,
   userGCP: GCPUSER,
   pathGCPKey: GCPKEY,
   pathGCPOutput: GCPPATH,
-  mungbeanPath: MUNGBEANFILESDIR,
+  pathMungbean: MUNGBEANFILESDIR,
   ekrishokHost: EKRISHOKAPIHOST,
   ekrishokPublicKey: EKRISHOKAPIPUBLICKEY,
   ekrishokToken: EKRISHOKAPIPOSTMANTOKEN,
   hostWB: WBHOST,
   userWB: WBUSER,
   passWB: WBPASS,
-  pathWB: WBPATH
+  pathWB: WBPATH,
+  pathLocalWB: WBPATHLOCAL
 };

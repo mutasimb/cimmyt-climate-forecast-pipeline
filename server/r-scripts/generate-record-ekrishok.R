@@ -4,17 +4,11 @@ attach(input[[1]])
 
 r_input_forecast -> json.forecast
 r_input_area_names -> json.area_names
-r_input_path_mungbean -> path.mungbean_files_dir
+r_input_path_record -> path.output_csv
 
 
 list.forecast <- fromJSON(json.forecast)
 df.area_names <- fromJSON(json.area_names)
-
-filename.input_nc_file <- list.forecast$filename
-path.output_record_csv <- paste0(
-  path.mungbean_files_dir, "/mungbean_",
-  gsub("_d01.nc", "", filename.input_nc_file), ".csv"
-)
 
 df.5_day_forecast <- as.data.frame(list.forecast$forecast_prec)
 df.5_day_cases <- as.data.frame(list.forecast$forecast_case)
@@ -47,12 +41,11 @@ df.mungbean_forecast <- df.mungbean_forecast[order(
 
 write.csv(
   df.mungbean_forecast,
-  path.output_record_csv,
+  path.output_csv,
   row.names = FALSE
 )
 
 
 toJSON(list(
-  pathLog = path.output_record_csv,
-  dataLog = df.mungbean_forecast
-))
+  pathRecordCSV = path.output_csv
+), pretty = TRUE, auto_unbox = TRUE)

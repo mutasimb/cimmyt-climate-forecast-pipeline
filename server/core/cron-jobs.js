@@ -4,14 +4,14 @@ const
   { NODE_ENV } = process.env,
 
   log = require('../utils/dev-log'),
-  getForecast = require('./get-latest-forecast'),
+  job = require('./task-download-n-process'),
 
-  jobPeakHour = new CronJob("0 */5 9-10 * * *", getForecast),
-  jobOffpeakHour = new CronJob(`0 */${NODE_ENV === 'production' ? '10' : '5'} 11-23 * * *`, getForecast);
+  jobPeakHour = new CronJob("0 */5 9-10 * * *", job),
+  jobOffpeakHour = new CronJob(`0 */${NODE_ENV === 'production' ? '10' : '5'} 11-23 * * *`, job);
 
 
 module.exports = () => {
-  if (NODE_ENV !== 'production') getForecast();
+  if (NODE_ENV !== 'production') job();
   jobPeakHour.start();
   jobOffpeakHour.start();
   log("Jobs started", "CRON");
