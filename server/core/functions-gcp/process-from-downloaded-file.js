@@ -5,7 +5,7 @@ const
   { ncPath, pathDownload } = require('../../config/keys');
 
 module.exports = path => new Promise((resolve, reject) => {
-  log(`Processing downloaded file: ${path}`, "GCP_PROCESS", true);
+  log(`Processing downloaded file: ${path}`, "GCP_PROCESS", false);
   R(
     "server/r-scripts/bmd-nc-to-gcp.R",
     {
@@ -14,10 +14,10 @@ module.exports = path => new Promise((resolve, reject) => {
       r_input_path_nc_dir: ncPath
     }
   ).then(output => {
-    log(`Generated GCP ready output: ${output.pathGCPReadyNC}`, "GCP_PROCESS", true);
+    log(`Generated GCP ready output: ${output.pathGCPReadyNC}`, "GCP_PROCESS", false);
     resolve(output.pathGCPReadyNC);
   }).catch(err => {
-    log(`Failed to generate GCP ready output`, "GCP_PROCESS", true, true, true);
+    log(`Failed to generate GCP ready output`, "GCP_PROCESS", false, true, true);
     reject(err);
   });
 });

@@ -12,10 +12,9 @@ const
   // pushToServer = require('./functions-gcp/upload');
 
 module.exports = async pathForecastBMD => {
-  log("Initiating ...", "GCP_CORE", true);
+  log("Initiating ...", "GCP_CORE", false);
   try {
-    const
-      pathGCPReadyNC = await processForecast(pathForecastBMD);
+    const pathGCPReadyNC = await processForecast(pathForecastBMD);
 
     // await pushToServer(pathGCPReadyNC);
     const dateLog = JSON.parse(await readFile(pathDateLog));
@@ -29,6 +28,6 @@ module.exports = async pathForecastBMD => {
   } catch (err) {
     console.log(err);
   } finally {
-    log("... finished", "GCP_CORE", true);
+    log("... finished", "GCP_CORE", false);
   }
 };

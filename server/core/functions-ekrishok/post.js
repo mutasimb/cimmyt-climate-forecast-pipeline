@@ -29,7 +29,7 @@ const
   };
 
 module.exports = ({ forecast_tmn, forecast_tmx, forecast_case }) => new Promise((resolve, reject) => {
-  log("Posting data", "EKRISHOK_SUBMISSION", true);
+  log("Posting data", "EKRISHOK_SUBMISSION", false);
   axios({
     method: 'post',
     url: ekrishokHost,
@@ -42,7 +42,7 @@ module.exports = ({ forecast_tmn, forecast_tmx, forecast_case }) => new Promise(
     data: readyForecast({ forecast_tmn, forecast_tmx, forecast_case })
   })
     .then(res => {
-      log("Data posted", "EKRISHOK_SUBMISSION", true);
+      log("Data posted", "EKRISHOK_SUBMISSION", false);
       resolve(res.data);
     })
     .catch(err => {

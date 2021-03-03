@@ -11,7 +11,8 @@ const
 
 
 module.exports = () => {
-  if (NODE_ENV !== 'production') job();
+  // if (NODE_ENV !== 'production') job();
+  job();
   jobPeakHour.start();
   jobOffpeakHour.start();
   log("Jobs started", "CRON");

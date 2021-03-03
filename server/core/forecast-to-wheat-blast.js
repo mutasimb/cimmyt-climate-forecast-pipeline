@@ -1,5 +1,4 @@
 const
-  { join } = require('path'),
   fs = require('fs'),
   { promisify } = require('util'),
   readFile = promisify(fs.readFile),
@@ -14,7 +13,7 @@ const
   pushToServer = require('./functions-wb/upload');
 
 module.exports = async pathForecastBMD => {
-  log("Initiating ...", "WB_CORE", true);
+  log("Initiating ...", "WB_CORE", false);
   try {
     const
       { local: pathLocal, remote: pathRemote } = await R("server/r-scripts/generate-wb-output-paths.R", {
@@ -39,6 +38,6 @@ module.exports = async pathForecastBMD => {
   } catch (err) {
     console.log(err);
   } finally {
-    log("... finished", "WB_CORE", true);
+    log("... finished", "WB_CORE", false);
   }
 };

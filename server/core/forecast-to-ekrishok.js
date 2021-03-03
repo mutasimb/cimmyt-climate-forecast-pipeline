@@ -14,7 +14,7 @@ const
   generateRecord = require('./functions-ekrishok/generate-record');
 
 module.exports = async pathForecastBMD => {
-  log("Initiating ...", "EKRISHOK_CORE", true);
+  log("Initiating ...", "EKRISHOK_CORE", false);
   try {
     const
       { local: pathLocalCSV } = await R("server/r-scripts/generate-ekrishok-output-paths.R", {
@@ -37,6 +37,6 @@ module.exports = async pathForecastBMD => {
   } catch (err) {
     console.log(err);
   } finally {
-    log("... finished", "EKRISHOK_CORE", true);
+    log("... finished", "EKRISHOK_CORE", false);
   }
 };
