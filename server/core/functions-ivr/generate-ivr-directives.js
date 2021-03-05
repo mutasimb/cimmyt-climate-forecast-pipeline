@@ -86,11 +86,5 @@ module.exports = data => {
       dates: null,
       outgoing: []
     });
-  return {
-    developer: processedData,
-    provider: {
-      ...processedData,
-      outgoing: processedData.outgoing.map(el => ({ group: el.group, directives: el.directives }))
-    }
-  };
+  return processedData;
 }

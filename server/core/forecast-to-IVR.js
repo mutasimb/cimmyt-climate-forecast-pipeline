@@ -18,20 +18,14 @@ module.exports = async pathForecastBMD => new Promise(async (resolve, reject) =>
   log("Initiating ...", "IVR_CORE", false);
   try {
     const
-      {
-        localOutputProvider: pathOutputProvider,
-        localOutputDeveloper: pathOutputDeveloper
-      } = await R("server/r-scripts/generate-ivr-output-paths.R", {
+      { localOutput: pathOutput } = await R("server/r-scripts/generate-ivr-output-paths.R", {
         r_input_path_nc_file: pathForecastBMD,
         r_input_path_local_mungbean: pathMungbean
       }),
       { data: forecastData } = await forecastGenerate(pathForecastBMD, pathMungbean),
-      {
-        provider: dataProvider,
-        developer: dataDeveloper
-      } = directiveGenerate(forecastData);
+      apiData = directiveGenerate(forecastData);
 
-    await writeFile(pathOutputProvider, JSON.stringify(
+    await writeFile(pathOutput, JSON.stringify(
       {
         meta: {
           sourceBMD: {
@@ -39,28 +33,11 @@ module.exports = async pathForecastBMD => new Promise(async (resolve, reject) =>
             timeDownloaded: (await stat(pathForecastBMD)).mtime
           },
           sourceLocal: {
-            filename: pathOutputProvider.split("/").reverse()[0],
+            filename: pathOutput.split("/").reverse()[0],
             timeGenerated: new Date()
           }
         },
-        ...dataProvider
-      },
-      undefined,
-      2
-    ));
-    await writeFile(pathOutputDeveloper, JSON.stringify(
-      {
-        meta: {
-          sourceBMD: {
-            filename: pathForecastBMD.split("/").reverse()[0],
-            timeDownloaded: (await stat(pathForecastBMD)).mtime
-          },
-          sourceLocal: {
-            filename: pathOutputDeveloper.split("/").reverse()[0],
-            timeGenerated: new Date()
-          }
-        },
-        ...dataDeveloper
+        ...apiData
       },
       undefined,
       2
