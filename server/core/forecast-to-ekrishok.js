@@ -13,16 +13,16 @@ const
   postData = require('./functions-ekrishok/post'),
   generateRecord = require('./functions-ekrishok/generate-record');
 
-module.exports = async pathForecastBMD => {
+module.exports = pathForecastBMD => new Promise(async (resolve, reject) => {
   log("Initiating ...", "EKRISHOK_CORE", false);
   try {
     const
       { local: pathLocalCSV } = await R("server/r-scripts/generate-ekrishok-output-paths.R", {
         r_input_path_nc_file: pathForecastBMD,
         r_input_path_local_mungbean: pathMungbean
-      });
+      }),
+      forecast = await processForecast(pathForecastBMD);
 
-    const forecast = await processForecast(pathForecastBMD);
     await postData(forecast);
     await generateRecord(pathLocalCSV, forecast);
     
@@ -34,9 +34,9 @@ module.exports = async pathForecastBMD => {
         updatedAt: new Date()
       }
     }, undefined, 2));
-  } catch (err) {
-    console.log(err);
-  } finally {
     log("... finished", "EKRISHOK_CORE", false);
+    resolve();
+  } catch (err) {
+    reject(err);
   }
-};
+});

@@ -12,7 +12,7 @@ const
   processForecast = require('./functions-wb/process-from-downloaded-file'),
   pushToServer = require('./functions-wb/upload');
 
-module.exports = async pathForecastBMD => {
+module.exports = pathForecastBMD => new Promise(async (resolve, reject) => {
   log("Initiating ...", "WB_CORE", false);
   try {
     const
@@ -35,9 +35,9 @@ module.exports = async pathForecastBMD => {
         updatedAt: new Date()
       }
     }, undefined, 2));
-  } catch (err) {
-    console.log(err);
-  } finally {
+    resolve();
     log("... finished", "WB_CORE", false);
+  } catch (err) {
+    reject(err);
   }
-};
+});

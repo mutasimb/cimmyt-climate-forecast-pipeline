@@ -14,9 +14,9 @@ const
   downloadBMDDownloadable = require('../utils/hpc-file-download'),
 
   bmdToGCP = require('./forecast-to-GCP'),
-  bmdToWB = require('./forecast-to-wheat-blast'),
-  bmdToEKrishok = require('./forecast-to-ekrishok'),
   bmdToIVR = require('./forecast-to-IVR'),
+  bmdToEKrishok = require('./forecast-to-ekrishok'),
+  bmdToWB = require('./forecast-to-wheat-blast'),
 
   log = require('../utils/dev-log');
 
@@ -74,10 +74,10 @@ module.exports = async () => {
       await downloadBMDDownloadable();
     }
 
-    if(!dateLog.agvisely.done) bmdToGCP(pathDownloaded);
-    if(!dateLog.wheatBlast.done) bmdToWB(pathDownloaded);
-    if(!dateLog.eKrishok.done) bmdToEKrishok(pathDownloaded);
-    if(!dateLog.ivr.done) bmdToIVR(pathDownloaded);
+    if(!dateLog.agvisely.done) await bmdToGCP(pathDownloaded);
+    if(!dateLog.ivr.done) await bmdToIVR(pathDownloaded);
+    if(!dateLog.eKrishok.done) await bmdToEKrishok(pathDownloaded);
+    if(!dateLog.wheatBlast.done) await bmdToWB(pathDownloaded);
   } catch (err) {
     if (err.log || process.env.NODE_ENV === "development") log('msg' in err ? err.msg : err, "ROOT CATCH", false, error = true);
   } finally {

@@ -14,18 +14,24 @@ const
   forecastGenerate = require("./functions-ivr/generate-forecast-data"),
   directiveGenerate = require("./functions-ivr/generate-ivr-directives");
 
-module.exports = async pathForecastBMD => {
-  log("Initiating ...", "IVR_CORE", true);
+module.exports = async pathForecastBMD => new Promise(async (resolve, reject) => {
+  log("Initiating ...", "IVR_CORE", false);
   try {
     const
-      { localCSV: pathLocalCSV, localJSON: pathLocalJSON } = await R("server/r-scripts/generate-ivr-output-paths.R", {
+      {
+        localOutputProvider: pathOutputProvider,
+        localOutputDeveloper: pathOutputDeveloper
+      } = await R("server/r-scripts/generate-ivr-output-paths.R", {
         r_input_path_nc_file: pathForecastBMD,
         r_input_path_local_mungbean: pathMungbean
       }),
       { data: forecastData } = await forecastGenerate(pathForecastBMD, pathMungbean),
-      { provider: dataProvider } = directiveGenerate(forecastData);
+      {
+        provider: dataProvider,
+        developer: dataDeveloper
+      } = directiveGenerate(forecastData);
 
-    await writeFile(pathLocalJSON, JSON.stringify(
+    await writeFile(pathOutputProvider, JSON.stringify(
       {
         meta: {
           sourceBMD: {
@@ -33,11 +39,28 @@ module.exports = async pathForecastBMD => {
             timeDownloaded: (await stat(pathForecastBMD)).mtime
           },
           sourceLocal: {
-            filename: pathLocalJSON.split("/").reverse()[0],
+            filename: pathOutputProvider.split("/").reverse()[0],
             timeGenerated: new Date()
           }
         },
         ...dataProvider
+      },
+      undefined,
+      2
+    ));
+    await writeFile(pathOutputDeveloper, JSON.stringify(
+      {
+        meta: {
+          sourceBMD: {
+            filename: pathForecastBMD.split("/").reverse()[0],
+            timeDownloaded: (await stat(pathForecastBMD)).mtime
+          },
+          sourceLocal: {
+            filename: pathOutputDeveloper.split("/").reverse()[0],
+            timeGenerated: new Date()
+          }
+        },
+        ...dataDeveloper
       },
       undefined,
       2
@@ -52,7 +75,9 @@ module.exports = async pathForecastBMD => {
         updatedAt: new Date()
       }
     }, undefined, 2));
+    log("... finished", "IVR_CORE", false);
+    resolve();
   } catch (err) {
-    console.log(err);
+    reject(err);
   }
-}
+});

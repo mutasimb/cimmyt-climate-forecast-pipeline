@@ -11,7 +11,7 @@ const
   processForecast = require('./functions-gcp/process-from-downloaded-file');
   // pushToServer = require('./functions-gcp/upload');
 
-module.exports = async pathForecastBMD => {
+module.exports = pathForecastBMD => new Promise(async (resolve, reject) => {
   log("Initiating ...", "GCP_CORE", false);
   try {
     const pathGCPReadyNC = await processForecast(pathForecastBMD);
@@ -25,9 +25,9 @@ module.exports = async pathForecastBMD => {
         updatedAt: new Date()
       }
     }, undefined, 2));
-  } catch (err) {
-    console.log(err);
-  } finally {
     log("... finished", "GCP_CORE", false);
+    resolve();
+  } catch (err) {
+    reject(err);
   }
-};
+});
