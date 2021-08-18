@@ -6,8 +6,8 @@ const
   log = require('../utils/dev-log'),
   job = require('./task-download-n-process'),
 
-  jobPeakHour = new CronJob("0 */5 9-10 * * *", job),
-  jobOffpeakHour = new CronJob(`0 */${NODE_ENV === 'production' ? '10' : '5'} 11-23 * * *`, job);
+  jobPeakHour = new CronJob("0 */5 12-13 * * *", job),
+  jobOffpeakHour = new CronJob(`0 */${NODE_ENV === 'production' ? '10' : '5'} 14-23 * * *`, job);
 
 
 module.exports = () => {
