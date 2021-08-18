@@ -9,9 +9,9 @@ const
 
   { pathDateLog, pathDownload } = require('../config/keys'),
 
-  statsBMDDownloadable = require('../utils/hpc-file-stats.js'),
-  checkBMDDownloadable = require('../utils/hpc-file-existence'),
-  downloadBMDDownloadable = require('../utils/hpc-file-download'),
+  // statsBMDDownloadable = require('../utils/hpc-file-stats.js'),
+  // checkBMDDownloadable = require('../utils/hpc-file-existence'),
+  // downloadBMDDownloadable = require('../utils/hpc-file-download'),
 
   bmdToGCP = require('./forecast-to-GCP'),
   bmdToIVR = require('./forecast-to-IVR'),
@@ -47,7 +47,7 @@ module.exports = async () => {
     }, undefined, 2));
     dateLog = JSON.parse(await readFile(pathDateLog));
 
-    log("Checking existence of downloadable forecast file ...", "ROOT");
+    log("Checking existence of forecast file ...", "ROOT");
     const isDownloadedFilePresent = await exists(pathDownloaded);
     if (isDownloadedFilePresent) {
       log(`Downloadable forecast has been downloaded: ${pathDownloaded}`, "ROOT");
@@ -55,23 +55,23 @@ module.exports = async () => {
       log(`Getting stats of downloaded forecast file ...`, "ROOT");
       const stats = await stat(pathDownloaded);
       if (
-        (new Date() - new Date(stats.mtimeMs)) / (1000 * 60) < 5
-      ) throw { log: true, msg: `File was modified less than 5 minute ago: ${pathDownloaded}` };
+        (new Date() - stats.ctime) / (1000 * 60) < 20
+      ) throw { log: true, msg: `File was created less than 20 minute ago: ${pathDownloaded}` };
 
-      const
-        { size: sizeDownloadedFile } = stats,
-        { attrs } = await statsBMDDownloadable(),
-        { size: sizeRemoteFile } = attrs;
+      // const
+      //   { size: sizeDownloadedFile } = stats,
+      //   { attrs } = await statsBMDDownloadable(),
+      //   { size: sizeRemoteFile } = attrs;
 
-      if (sizeDownloadedFile !== sizeRemoteFile) {
-        log("But downloaded file size doesn't match the remote file", "ROOT");
-        log("Attempt to download again ...", "ROOT");
-        await downloadBMDDownloadable();
-      }
+      // if (sizeDownloadedFile !== sizeRemoteFile) {
+      //   log("But downloaded file size doesn't match the remote file", "ROOT");
+      //   log("Attempt to download again ...", "ROOT");
+      //   await downloadBMDDownloadable();
+      // }
     } else {
-      log(`Downloadable forecast hasn't been downloaded: ${pathDownloaded}`, "ROOT");
-      await checkBMDDownloadable();
-      await downloadBMDDownloadable();
+      throw { log: false, msg: `Forecast data isn't available: ${pathDownloaded}`};
+      // await checkBMDDownloadable();
+      // await downloadBMDDownloadable();
     }
 
     if(!dateLog.agvisely.done) await bmdToGCP(pathDownloaded);
