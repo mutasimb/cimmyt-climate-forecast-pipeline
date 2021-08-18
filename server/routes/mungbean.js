@@ -32,7 +32,15 @@ const
         const dataJSON = JSON.parse(await readFile(mungbeanDirectives[0].path));
         res.json(path === "/ivr-developer/" ? dataJSON : {
           ...dataJSON,
-          outgoing: dataJSON.outgoing.map(el => ({ group: el.group, directives: el.directives }))
+          outgoing: dataJSON.outgoing.map(el => ({
+            group: el.group,
+            directives: el.directives,
+            skipBroadcast: el.skipBroadcast ? true : false
+          })),
+          incoming: dataJSON.incoming.map(el => ({
+            group: el.group,
+            directives: el.directives
+          }))
         });
       }
     } catch (error) {
@@ -42,5 +50,17 @@ const
 
 router.get('/ivr-provider/', callback);
 router.get('/ivr-developer/', callback);
+router.get('/ivr-archive/:ymd', async (req, res) => {
+  const { ymd } = req.params;
+  try {
+    if(ymd && fs.existsSync(`${ pathMungbean + '/' }bmd_forecast_ivr_${ ymd }_d01.json`)) {
+      res.json(JSON.parse(await readFile(`${ pathMungbean + '/' }bmd_forecast_ivr_${ ymd }_d01.json`)))
+    } else {
+      res.status(500).json({ err: "No data available" });
+    }
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
 
 module.exports = router;

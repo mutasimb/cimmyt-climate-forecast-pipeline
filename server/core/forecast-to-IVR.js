@@ -23,7 +23,7 @@ module.exports = async pathForecastBMD => new Promise(async (resolve, reject) =>
         r_input_path_local_mungbean: pathMungbean
       }),
       { data: forecastData } = await forecastGenerate(pathForecastBMD, pathMungbean),
-      apiData = directiveGenerate(forecastData);
+      apiData = await directiveGenerate(forecastData);
 
     await writeFile(pathOutput, JSON.stringify(
       {
