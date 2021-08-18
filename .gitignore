@@ -3,3 +3,4 @@ node_modules
 ecosystem.config.js
 nodemon.json
 server/key
+server/public
