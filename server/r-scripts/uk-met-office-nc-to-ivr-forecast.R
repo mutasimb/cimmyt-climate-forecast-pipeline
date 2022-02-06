@@ -18,34 +18,32 @@ rain2case <- function(rain) return(if(
   rain > 38
 ) 4 else as.numeric(NA))
 
+
 df.forecast_points <- read.csv(paste(path.mungbean_dir, "210215_forecast_points_ivr.csv", sep = "/"))
 
-filename.input_nc <- rev(strsplit(path.downloaded_nc, '/')[[1]])[1]
-time.base <- strptime(filename.input_nc, "%Y%m%d%H_d01.nc.subset", tz = "GMT")
 
+nc.uk_met_office <- nc_open(path.downloaded_nc)
 
-nc.bmd <- nc_open(path.downloaded_nc)
-
-nc.ln <- ncvar_get(nc.bmd, 'XLONG')[,1,1]
-nc.lt <- ncvar_get(nc.bmd, 'XLAT')[1,,1]
-nc.tm <- sapply(
-  ncvar_get(nc.bmd, 'XTIME'),
-  function(x) gsub(" \\+06", "", as.character(format(
-    as.POSIXct(time.base + x * 60),
-    "%Y%m%d%H",
-    tz = "Asia/Dhaka",
-    usetz = TRUE
-  )))
+nc.ln <- ncvar_get(nc.uk_met_office, 'lon')
+nc.lt <- ncvar_get(nc.uk_met_office, 'lat')
+nc.tm <- format(
+  as.POSIXct(
+    (ncvar_get(nc.uk_met_office, 'time') - 48) * 3600,
+    origin = "1-1-1 00:00"
+  ),
+  "%Y%m%d%H"
 )
-nc.prec <- ncvar_get(nc.bmd, "prec")
 
-nc_close(nc.bmd)
+nc.prec <- ncvar_get(nc.uk_met_office, "prec")
+
+nc_close(nc.uk_met_office); rm(nc.uk_met_office)
 
 
-d0 <- as.Date(strptime(nc.tm[1], "%Y%m%d%H"))
-dates <- seq.Date(d0, by = "1 day", length.out = 5)
+d1 <- as.Date(strptime(nc.tm[1], "%Y%m%d%H"))
+dates <- seq.Date(d1, by = "1 day", length.out = 5)
 list.array <- list(); for(t in 1:(length(nc.tm) - 1)) {
   i.string <- format(as.Date(strptime(nc.tm[t], "%Y%m%d%H")), "d%Y%m%d")
+  print(c(i.string, t))
   list.array[[i.string]] <- if( is.null(list.array[[i.string]]) ) nc.prec[,, t+1] else list.array[[i.string]] + nc.prec[,, t+1]
 }; rm(t, i.string)
 
@@ -90,7 +88,4 @@ list.data <- lapply(
 )
 
 
-toJSON(list(
-  dates = as.numeric(format(dates, "%Y%m%d")),
-  data = list.data
-), auto_unbox = TRUE)
+toJSON(list.data, auto_unbox = TRUE)

@@ -1,13 +1,13 @@
 const
-  R = require("../../utils/r-script"),
-  log = require("../../utils/dev-log");
+  R = require("../../utils/r-script.js"),
+  log = require("../../utils/dev-log.js");
 
-module.exports = (pathInput, pathMungbeanDir) => new Promise((resolve, reject) => {
+module.exports = ({ pathInputNC, pathMungbeanDir }) => new Promise((resolve, reject) => {
   log("Generating forecasts for IVR locations", "IVR_FORECAST");
   R(
-    "server/r-scripts/bmd-nc-to-ivr-forecast.R",
+    "server/r-scripts/uk-met-office-nc-to-ivr-forecast.R",
     {
-      r_input_path_nc_file: pathInput,
+      r_input_path_nc_file: pathInputNC,
       r_input_path_mungbean: pathMungbeanDir
     }
   ).then(output => {

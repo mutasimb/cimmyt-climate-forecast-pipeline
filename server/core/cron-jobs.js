@@ -1,19 +1,17 @@
 const
   { CronJob } = require('cron'),
 
-  { NODE_ENV } = process.env,
+  log = require('../utils/dev-log.js'),
 
-  log = require('../utils/dev-log'),
-  job = require('./task-download-n-process'),
+  taskUkMetOfficeIVR = require('./functions-uk-met-office-ivr/'),
 
-  jobPeakHour = new CronJob("0 */5 12-13 * * *", job),
-  jobOffpeakHour = new CronJob(`0 */${NODE_ENV === 'production' ? '10' : '5'} 14-23 * * *`, job);
-
+  jobUkMetOfficeIVRPeak = new CronJob("0 */5 10-12 * * *", taskUkMetOfficeIVR),
+  jobUkMetOfficeIVROffPeak = new CronJob("0 */15 13-18 * * *", taskUkMetOfficeIVR);
 
 module.exports = () => {
-  // if (NODE_ENV !== 'production') job();
-  job();
-  jobPeakHour.start();
-  jobOffpeakHour.start();
-  log("Jobs started", "CRON");
+  log("Jobs starting ...", "CRON");
+
+  taskUkMetOfficeIVR();
+  jobUkMetOfficeIVRPeak.start();
+  jobUkMetOfficeIVROffPeak.start();
 };

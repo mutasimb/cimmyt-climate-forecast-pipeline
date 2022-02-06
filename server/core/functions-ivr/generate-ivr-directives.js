@@ -6,15 +6,16 @@ const
   { timeDay } = require("d3-time"),
   { timeFormat } = require("d3-time-format"),
   { range, max } = require("d3-array"),
-  
-  { pathMungbean } = require('../../config/keys'),
-  
+
+  { pathMungbean } = require('../../config/keys.js'),
+
   isEmpty = obj => Object.keys(obj).length === 0 && obj.constructor === Object,
-  forecastCodeTransform = code => code === 1
-    ? "n" : code === 2
-    ? "l" : code === 3
-    ? "h" : code === 4
-    ? "v" : "",
+  forecastCodeTransform =
+    code => code === 1 ? "n"
+      : code === 2 ? "l"
+        : code === 3 ? "h"
+          : code === 4 ? "v"
+            : "",
   forecastToCharacterCodes = (forecast, dates) => {
     const codes = forecast
       .filter(el => dates.indexOf(el.date) > 0)
@@ -33,7 +34,7 @@ module.exports = data => new Promise(async (resolve, reject) => {
     mungbeanDirectiveJSONs = range(4)
       .map(el => timeDay.offset(new Date(), el * (-1)))
       .map(el => pathMungbean + '/' + timeFormat("bmd_forecast_ivr_%Y%m%d_d01.json")(el));
-      
+
   const
     dataArchiveJSON1 = fs.existsSync(mungbeanDirectiveJSONs[1]) ? JSON.parse(await readFile(mungbeanDirectiveJSONs[1])) : {},
     dataArchiveJSON2 = fs.existsSync(mungbeanDirectiveJSONs[2]) ? JSON.parse(await readFile(mungbeanDirectiveJSONs[2])) : {},
@@ -63,38 +64,35 @@ module.exports = data => new Promise(async (resolve, reject) => {
               `ivr_${characterCodes[0] === characterCodes[1] ? `and` : `f_${characterCodes}1`}`,
               `ivr_dc`,
               `ivr_d${`${dates[2]}`.slice(4)}`,
-              `ivr_f_${
-                characterCodes
-              }${
-                characterCodes[0] === characterCodes[1] ? `1`: `2`
-              }${
-                characterCodes[2] !== "n" ? `_2d` : ``
+              `ivr_f_${characterCodes
+              }${characterCodes[0] === characterCodes[1] ? `1` : `2`
+              }${characterCodes[2] !== "n" ? `_2d` : ``
               }`,
             ];
-          if((characterCodes.indexOf("h") > -1 | characterCodes.indexOf("v") > -1) && t === "ta") {
+          if ((characterCodes.indexOf("h") > -1 | characterCodes.indexOf("v") > -1) && t === "ta") {
             directives.push(`msg4_adv_a_${characterCodes}`);
-            if(g === "gf") directives.push(`msg5_adv_b`);
+            if (g === "gf") directives.push(`msg5_adv_b`);
           }
           directives.push(`msg6_outro`);
           directives.push(`msg7_outro`);
 
           let skipBroadcast = false;
-          if(!isEmpty(dataArchiveJSON1) && !isEmpty(dataArchiveJSON2) && !isEmpty(dataArchiveJSON3)) {
-            if(characterCodes === 'nnn') {
+          if (!isEmpty(dataArchiveJSON1) && !isEmpty(dataArchiveJSON2) && !isEmpty(dataArchiveJSON3)) {
+            if (characterCodes === 'nnn') {
               const
                 groupObj1 = dataArchiveJSON1.outgoing.find(groupObj => groupObj.group === idGroup),
                 groupObj2 = dataArchiveJSON2.outgoing.find(groupObj => groupObj.group === idGroup),
                 groupObj3 = dataArchiveJSON3.outgoing.find(groupObj => groupObj.group === idGroup);
               skipBroadcast = true;
-    
-              if(groupObj1.forecastCode !== 'nnn' || (
+
+              if (groupObj1.forecastCode !== 'nnn' || (
                 'skipBroadcast' in groupObj1 && groupObj1.skipBroadcast === true &&
                 'skipBroadcast' in groupObj2 && groupObj2.skipBroadcast === true &&
                 'skipBroadcast' in groupObj3 && groupObj3.skipBroadcast === true
               )) skipBroadcast = false;
             }
           }
-        
+
           return {
             group: idGroup,
             district: dis,
@@ -118,17 +116,14 @@ module.exports = data => new Promise(async (resolve, reject) => {
               `ivr_${characterCodes[0] === characterCodes[1] ? `and` : `f_${characterCodes}1`}`,
               `ivr_dc`,
               `ivr_d${`${dates[2]}`.slice(4)}`,
-              `ivr_f_${
-                characterCodes
-              }${
-                characterCodes[0] === characterCodes[1] ? `1`: `2`
-              }${
-                characterCodes[2] !== "n" ? `_2d` : ``
+              `ivr_f_${characterCodes
+              }${characterCodes[0] === characterCodes[1] ? `1` : `2`
+              }${characterCodes[2] !== "n" ? `_2d` : ``
               }`,
             ];
-          if((characterCodes.indexOf("h") > -1 | characterCodes.indexOf("v") > -1) && t === "ta") {
+          if ((characterCodes.indexOf("h") > -1 | characterCodes.indexOf("v") > -1) && t === "ta") {
             directives.push(`msg4_adv_a_${characterCodes}`);
-            if(g === "gf") directives.push(`msg5_adv_b`);
+            if (g === "gf") directives.push(`msg5_adv_b`);
           }
           directives.push(`msg6_outro`);
           directives.push(`ivr123_thanks`);
