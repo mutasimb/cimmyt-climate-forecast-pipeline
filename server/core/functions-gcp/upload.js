@@ -3,30 +3,36 @@ const
   { readFileSync } = require('fs'),
   { Client: SCPClient } = require('scp2'),
 
-  log = require('../../utils/dev-log'),
+  log = require('../../utils/dev-log.js'),
 
-  { hostGCP, userGCP, pathGCPKey, pathGCPOutput } = require('../../config/keys');
+  {
+    portAgvisely,
+    hostAgvisely,
+    userAgvisely,
+    pathAgviselyKey,
+    pathAgviselyOutput
+  } = require('../../config/keys.js');
 
 module.exports = path => new Promise((resolve, reject) => {
-  const clientGCP = new SCPClient({
-    port: 22,
-    host: hostGCP,
-    username: userGCP,
-    privateKey: readFileSync(join(__dirname, "..", "..", pathGCPKey))
+  const clientAgvisely = new SCPClient({
+    port: portAgvisely,
+    host: hostAgvisely,
+    username: userAgvisely,
+    privateKey: readFileSync(join(__dirname, "..", "..", pathAgviselyKey))
   });
 
-  log(`Initiating upload to GCP: ${path}`, "GCP_UPLOAD", false);
-  clientGCP.upload(
+  log("Initiating upload to Agvisely server", "AGVISELY_UPLOAD");
+  clientAgvisely.upload(
     path,
-    pathGCPOutput + "/netcdf-d01-uploads/",
+    pathAgviselyOutput,
     err => {
       if (err) {
-        log(`Upload failed: ${path}`, "GCP_UPLOAD", false);
-        clientGCP.close();
+        log("Upload failed", "AGVISELY_UPLOAD");
+        clientAgvisely.close();
         reject(err);
       }
-      log(`Successfully uploaded to: ${userGCP + "@" + hostGCP + ":" + pathGCPOutput + "/netcdf-d01-uploads/"}`, "GCP_UPLOAD", false);
-      clientGCP.close();
+      log("Successfully uploaded", "AGVISELY_UPLOAD");
+      clientAgvisely.close();
       resolve();
     }
   );
