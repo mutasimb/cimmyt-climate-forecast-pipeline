@@ -42,7 +42,7 @@ module.exports = async () => {
       if (!existenceGrib2) throw { message: "Failed to download files", devOnly: false };
 
       await generateOutput({
-        pathOutput: pathLocalMetOffice + "/downloads/latest-metadata.json",
+        pathOutput: pathLocalMetOffice + "/downloads/latest-metadata-ivr.json",
         pathOutputNC,
         date: timeFormat("%Y%m%d")(targetDate),
         files: downloadables

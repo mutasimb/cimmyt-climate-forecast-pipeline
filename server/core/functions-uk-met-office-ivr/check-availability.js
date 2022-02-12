@@ -33,10 +33,12 @@ module.exports = files => new Promise((resolve, reject) => {
           : ({ ...resFiles.find(el => el.fileId === file.fileId), ...file })
       );
 
-    if (availability.indexOf(null) > -1) reject({ message: "New files are not yet available to download, try again later", devOnly: true });
-
-    log("New files are available for downloading", "METOFFICEIVR_CHECKAVAILABILITY");
-    resolve(availability);
+    if (availability.indexOf(null) > -1) {
+      reject({ message: "New files are not yet available to download, try again later", devOnly: true });
+    } else {
+      log("New files are available for downloading", "METOFFICEIVR_CHECKAVAILABILITY");
+      resolve(availability);
+    }
   }).catch(err => {
     reject(err);
   });
