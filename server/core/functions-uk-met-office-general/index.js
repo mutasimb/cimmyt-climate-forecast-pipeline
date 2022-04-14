@@ -1,4 +1,5 @@
 const
+  { join } = require("path"),
   { promisify } = require("util"),
   exists = promisify(require("fs").exists),
   readFile = promisify(require("fs").readFile),
@@ -13,6 +14,8 @@ const
   checkAvailability = require("./check-availability.js"),
   downloadFiles = require("./download-files.js"),
   generateOutput = require("./generate-output.js"),
+  generateJSON = require("./generate-json-from-grib.js"),
+  generateNC = require("./generate-nc.js"),
 
   deployAgviselyData = require("../functions-gcp/"),
   deployWheatBlastData = require("../functions-wb/"),
@@ -37,13 +40,18 @@ module.exports = async () => {
     filenameDateAfterUTCOffset.setDate(filenameDateAfterUTCOffset.getDate() - 1);
 
     const
-      pathOutputNC = pathLocalMetOffice + "/" + timeFormat(formatNC)(targetDate),
-      pathMetaData = pathLocalMetOffice + "/downloads/latest-metadata-general.json";
+      pathOutputNC = join(pathLocalMetOffice, "netcdf", timeFormat(formatNC)(targetDate)),
+      pathMetaData = join(pathLocalMetOffice, "latest-metadata-general.json");
     let
       downloadables = formatFileIds
         .map(el => timeFormat(el)(filenameDateAfterUTCOffset))
-        .map(el => ({ fileId: el, path: pathLocalMetOffice + "/downloads/" + el + ".grib2" })),
-      existenceGrib2 = await checkExistence([...downloadables.map(el => el.path)]),
+        .map(el => ({
+          fileId: el,
+          pathGrib2: join(pathLocalMetOffice, "grib2", el + ".grib2"),
+          pathJson: join(pathLocalMetOffice, "json", el + ".json")
+        })),
+      existenceGrib2 = await checkExistence([...downloadables.map(el => el.pathGrib2)]),
+      existenceJSON = await checkExistence([...downloadables.map(el => el.pathJson)]),
       existenceNC = await checkExistence([pathOutputNC]),
       metadataLatest = await exists(pathMetaData) ? JSON.parse(await readFile(pathMetaData)) : null;
 
@@ -53,19 +61,33 @@ module.exports = async () => {
       downloadables = await checkAvailability(downloadables);
       downloadables = await downloadFiles(downloadables);
 
-      existenceGrib2 = await checkExistence(downloadables.map(el => el.path));
-      if (!existenceGrib2) throw { message: "Failed to download files", devOnly: false };
+      existenceGrib2 = await checkExistence(downloadables.map(el => el.pathGrib2));
+      if (!existenceGrib2) throw { message: "Failed to download grib2 files", devOnly: false };
 
       await generateOutput({
-        pathOutput: pathLocalMetOffice + "/downloads/latest-metadata-general.json",
+        pathOutput: pathMetaData,
         pathOutputNC,
         date: timeFormat("%Y%m%d")(targetDate),
         files: downloadables
       });
 
       metadataLatest = JSON.parse(await readFile(pathMetaData));
+    }
 
-      // manual grib2-to-nc conversion required at this point
+    if (!existenceJSON && existenceGrib2) {
+      await generateJSON(downloadables);
+      existenceJSON = await checkExistence([...downloadables.map(el => el.pathJson)]);
+      if (!existenceJSON) throw { message: "Failed to generate json files", devOnly: false };
+    }
+
+    if (!existenceNC && existenceJSON && existenceGrib2) {
+      await generateNC({
+        date: timeFormat("%Y%m%d")(targetDate),
+        pathsJSON: downloadables.map(file => file.pathJson),
+        pathNC: pathOutputNC
+      });
+      existenceNC = await checkExistence([pathOutputNC]);
+      if (!existenceNC) throw { message: "Failed to generate nc file", devOnly: false };
     }
 
     const [sentToAgvisely, sentToWheatBlast] =

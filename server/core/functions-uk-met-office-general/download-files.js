@@ -47,7 +47,7 @@ module.exports = files => new Promise((resolve, reject) => {
 
       return Promise.all(filesData.map(el => exec(
         `curl --request GET ${curlURL({ baseURL, orderId, fileId: el.fileId })
-        } ${curlH1} ${curlH2} ${curlH3} ${curlOutput(el.path)
+        } ${curlH1} ${curlH2} ${curlH3} ${curlOutput(el.pathGrib2)
         } --location`
       )));
     })
