@@ -1,61 +1,106 @@
 const
+  { join } = require("path"),
+  { promisify } = require("util"),
+  exists = promisify(require("fs").exists),
+  readFile = promisify(require("fs").readFile),
+  writeFile = promisify(require("fs").writeFile),
   { timeFormat } = require('d3-time-format'),
 
-  { pathLocalMetOffice, pathMungbean } = require('../../config/keys.js'),
+  { pathLocalMetOffice } = require('../../config/keys.js'),
   log = require("../../utils/dev-log.js"),
 
   checkExistence = require("./check-existence.js"),
   checkAvailability = require("./check-availability.js"),
   downloadFiles = require("./download-files.js"),
   generateOutput = require("./generate-output.js"),
-  generateIVRDirectiveJSON = require("../functions-ivr/"),
+  generateJSON = require("./generate-json-from-grib.js"),
+  generateNC = require("./generate-nc.js"),
+  pushMungbeanIVRData = require("../functions-ivr/"),
 
   formatFileIds = [
     "ground_precipitation-accumulation-1h_%Y%m%d00",
     "ground_precipitation-accumulation-3h_%Y%m%d00"
   ],
-  formatNC = "uk-met-office_global-10km_utc-0000_%Y%m%d.nc",
-  formatIVRDirectiveJSON = "uk-met-office_global-10km_utc-0000_ivr_%Y%m%d.json";
+  formatNC = "uk-met-office_global-10km_utc-0000_%Y%m%d.nc";
 
 module.exports = async () => {
   try {
     log("Initiating ...", "METOFFICEIVR_CORE");
     const
       targetDate = new Date(),
-      pathOutputNC = pathLocalMetOffice + "/" + timeFormat(formatNC)(targetDate),
-      pathDirectiveJSON = pathMungbean + "/" + timeFormat(formatIVRDirectiveJSON)(targetDate);
+      pathOutputNC = join(pathLocalMetOffice, "netcdf", timeFormat(formatNC)(targetDate)),
+      pathMetaData = join(pathLocalMetOffice, "latest-metadata-ivr.json");
     let
       downloadables = formatFileIds
         .map(el => timeFormat(el)(targetDate))
-        .map(el => ({ fileId: el, path: pathLocalMetOffice + "/downloads/" + el + ".grib2" })),
-      existenceGrib2 = await checkExistence([...downloadables.map(el => el.path)]),
+        .map(el => ({
+          fileId: el,
+          pathGrib2: join(pathLocalMetOffice, "grib2", el + ".grib2"),
+          pathJson: join(pathLocalMetOffice, "json", el + ".json")
+        })),
+      existenceGrib2 = await checkExistence([...downloadables.map(el => el.pathGrib2)]),
+      existenceJSON = await checkExistence([...downloadables.map(el => el.pathJson)]),
       existenceNC = await checkExistence([pathOutputNC]),
-      existenceJSON = await checkExistence([pathDirectiveJSON]);
+      metadataLatest = await exists(pathMetaData) ? JSON.parse(await readFile(pathMetaData)) : null;
 
     if (!existenceGrib2) {
-      // Expected .grib2 files don't exist
-
       downloadables = await checkAvailability(downloadables);
       downloadables = await downloadFiles(downloadables);
 
-      existenceGrib2 = await checkExistence(downloadables.map(el => el.path));
+      existenceGrib2 = await checkExistence(downloadables.map(el => el.pathGrib2));
       if (!existenceGrib2) throw { message: "Failed to download files", devOnly: false };
 
       await generateOutput({
-        pathOutput: pathLocalMetOffice + "/downloads/latest-metadata-ivr.json",
+        pathOutput: pathMetaData,
         pathOutputNC,
         date: timeFormat("%Y%m%d")(targetDate),
         files: downloadables
       });
 
-      // manual grib2-to-nc conversion required at this point
+      metadataLatest = JSON.parse(await readFile(pathMetaData));
     }
-    if (existenceNC && !existenceJSON) {
-      // Expected .nc is present but expected .json doesn't exist
 
-      log("Output .nc exists but .json doesn't", "METOFFICEIVR_CORE");
-      await generateIVRDirectiveJSON({ pathInput: pathOutputNC, pathOutput: pathDirectiveJSON });
+    if (!existenceJSON && existenceGrib2) {
+      await generateJSON(downloadables);
+      existenceJSON = await checkExistence([...downloadables.map(el => el.pathJson)]);
+      if (!existenceJSON) throw { message: "Failed to generate json files", devOnly: false };
     }
+
+    if (!existenceNC && existenceJSON && existenceGrib2) {
+      await generateNC({
+        date: timeFormat("%Y%m%d")(targetDate),
+        pathsJSON: downloadables.map(file => file.pathJson),
+        pathNC: pathOutputNC
+      });
+      existenceNC = await checkExistence([pathOutputNC]);
+      if (!existenceNC) throw { message: "Failed to generate nc file", devOnly: false };
+    }
+
+    const [pushedToIVR] =
+      ["mungbean_ivr"].map(
+        el => metadataLatest &&
+          'submitted' in metadataLatest &&
+          'date' in metadataLatest &&
+          metadataLatest.date === timeFormat("%Y%m%d")(targetDate)
+          ? metadataLatest.submitted[el] : false
+      );
+
+    if (existenceNC && !pushedToIVR) {
+      const pushedData = await pushMungbeanIVRData({ pathInputNC: pathOutputNC });
+
+      metadataLatest = metadataLatest
+        ? {
+          ...metadataLatest,
+          submitted: { ...metadataLatest.submitted, mungbean_ivr: true },
+          submitted_data: { ...metadataLatest.submitted_data, mungbean_ivr: pushedData }
+        }
+        : {
+          submitted: { mungbean_ivr: true },
+          submitted_data: { mungbean_ivr: pushedData }
+        };
+      await writeFile(pathMetaData, JSON.stringify(metadataLatest, undefined, 2));
+    }
+
   } catch (err) {
     if ("message" in err && "devOnly" in err) {
       log(err.message, "METOFFICEIVR_CORE CATCH", err.devOnly, true, true);

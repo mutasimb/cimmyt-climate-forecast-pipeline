@@ -1,11 +1,13 @@
 const
+  { join } = require("path"),
+
   R = require("../../utils/r-script.js"),
   log = require("../../utils/dev-log.js");
 
 module.exports = ({ pathInputNC, pathMungbeanDir }) => new Promise((resolve, reject) => {
   log("Generating forecasts for IVR locations", "IVR_FORECAST");
   R(
-    "server/r-scripts/uk-met-office-nc-to-ivr-forecast.R",
+    join(__dirname, "nc-to-ivr-forecast.R"),
     {
       r_input_path_nc_file: pathInputNC,
       r_input_path_mungbean: pathMungbeanDir
